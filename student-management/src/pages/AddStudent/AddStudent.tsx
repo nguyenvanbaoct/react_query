@@ -1,5 +1,5 @@
 import { useMatch, useParams } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { addStudent, getStudent, updateStudent } from 'apis/students.api'
 import { Student } from 'types/students.type'
 import { useEffect, useMemo, useState } from 'react'
@@ -23,34 +23,48 @@ type FormError =
     }
   | null
 
+const gender = {
+  male: 'Male',
+  female: 'Female',
+  other: 'Other'
+}
+
 export default function AddStudent() {
   const [formState, setFormState] = useState<FormStateType>(initialFromState)
   const { id } = useParams()
+  const queryClient = useQueryClient()
   const addStudentMutation = useMutation({
     mutationFn: (body: FormStateType) => {
       return addStudent(body)
     }
   })
 
-  // useQuery({
-  //   queryKey: ['student', id],
-  //   enabled: id !== undefined,
-  //   queryFn: () => getStudent(id as string),
-  //   onSuccess: (data) => {
-  //     setFormState(data.data)
-  //   }
-  // })
+  const studentQuery = useQuery({
+    queryKey: ['student', id],
+    enabled: id !== undefined,
+    staleTime: 1000 * 10,
+    queryFn: () => getStudent(id as string)
+  })
 
   useEffect(() => {
-    if (id !== undefined) {
-      getStudent(id as string).then((response) => {
-        setFormState(response.data)
-      })
+    if (studentQuery.data) {
+      setFormState(studentQuery.data.data)
     }
-  }, [id])
+  }, [studentQuery.data])
+
+  // useEffect(() => {
+  //   if (id !== undefined) {
+  //     getStudent(id as string).then((response) => {
+  //       setFormState(response.data)
+  //     })
+  //   }
+  // }, [id])
 
   const updateStudentMutation = useMutation({
-    mutationFn: (_) => updateStudent(id as string, formState as Student)
+    mutationFn: (_) => updateStudent(id as string, formState as Student),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['student', id], data)
+    }
   })
 
   const addMatch = useMatch('/students/add')
@@ -124,8 +138,8 @@ export default function AddStudent() {
                   id='gender-1'
                   type='radio'
                   name='gender'
-                  value='male'
-                  checked={formState.gender === 'male'}
+                  value={gender.male}
+                  checked={formState.gender === gender.male}
                   onChange={handlechange('gender')}
                   className='\ h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500'
                 />
@@ -138,8 +152,8 @@ export default function AddStudent() {
                   id='gender-2'
                   type='radio'
                   name='gender'
-                  value='female'
-                  checked={formState.gender === 'female'}
+                  value={gender.female}
+                  checked={formState.gender === gender.female}
                   onChange={handlechange('gender')}
                   className='h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 '
                 />
@@ -152,8 +166,8 @@ export default function AddStudent() {
                   id='gender-3'
                   type='radio'
                   name='gender'
-                  value='other'
-                  checked={formState.gender === 'other'}
+                  value={gender.other}
+                  checked={formState.gender === gender.other}
                   onChange={handlechange('gender')}
                   className='h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 '
                 />
