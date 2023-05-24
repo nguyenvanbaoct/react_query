@@ -1,9 +1,11 @@
+import Spinner from 'components/Spinner'
 import MainLayout from 'layouts/MainLayout'
 import About from 'pages/About'
 import AddStudent from 'pages/AddStudent'
 import Dashboard from 'pages/Dashboard'
 import NotFound from 'pages/NotFound'
 import Students from 'pages/Students'
+import { useIsFetching, useIsMutating } from '@tanstack/react-query'
 import { useRoutes } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -36,8 +38,12 @@ function App() {
     }
   ])
 
+  const isFetching = useIsFetching()
+  const isMutating = useIsMutating()
+
   return (
     <div className='App'>
+      {isFetching + isMutating !== 0 && <Spinner />}
       <MainLayout>{elements}</MainLayout>
       <ToastContainer />
     </div>
